@@ -10809,7 +10809,8 @@ local function deep_plain(value, seen)
   local out = {}
   seen[value] = out
   -- Upstream serializes a struct's pointer member as nothing
-  -- (GenericNullSerializeProperty) and a container's pointer element as a reference.
+  -- (GenericNullSerializeProperty) and follows a container's pointer element,
+  -- writing it out as its declared class (LuaSerialize.h, Serialize(T const*)).
   local meta = Ext._Internal.RawGetMetatable(value)
   local struct = type(meta) == "table" and meta.__bg3leContainer == nil and meta.__bg3leIdentity ~= nil
   -- A getter or custom member (ServerCharacter.Character is the object itself)
@@ -10817,13 +10818,12 @@ local function deep_plain(value, seen)
   local typeName = struct and meta.__name or nil
   for k, v in pairs(value) do
     if type(v) ~= "function" and not (typeName and Ext._Internal.CustomMember(typeName, k) ~= nil) then
-      -- A pointer: nothing as a struct's member, the object itself (upstream's
-      -- MakeObjectRef) as a container's element -- never followed.
+      -- A pointer: nothing as a struct's member, a plain table as a container's
+      -- element. Leaving the object there made Ext.Json.Stringify of a serialized
+      -- character template fail on its OnDeathActions (IActionData).
       local vm = Ext._Internal.RawGetMetatable(v)
-      if not (type(vm) == "table" and vm.__bg3lePointer) then
+      if not (struct and type(vm) == "table" and vm.__bg3lePointer) then
         out[k] = deep_plain(v, seen)
-      elseif not struct then
-        out[k] = v
       end
     end
   end

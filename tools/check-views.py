@@ -68,6 +68,11 @@ plain_value = slice_between(
     "-- A container or struct proxy as the plain table upstream copies it from",
     "make_fields = function(handle, comp, prefix, fields, identity)")
 
+# Ext.Types.Serialize and the deep copy behind it.
+serialize = slice_between(
+    "-- Upstream's Serialize turns an engine object proxy into a plain Lua",
+    "-- Upstream's Unserialize ignores what a property's setter refuses")
+
 # Stringify raises again through these; the harness's errors are positioned in
 # its own file, so they end at error(err, 0) and never reach RaiseOutside.
 reraise = slice_between(
@@ -437,8 +442,40 @@ end
 print("array, map, dump and nested containers all check out")
 """
 
+SERIALIZE_TEST = r"""
+-- ---- Ext.Types.Serialize and pointers ----
+--
+-- Upstream drops a struct's pointer member and writes a container's pointer
+-- element out as its declared class. bg3le left the element as the object, so
+-- Configurable Movement Speed's Ext.Json.Stringify(Ext.Types.Serialize(template))
+-- failed on a character template's OnDeathActions: "unsupported type: IActionData".
+function Ext._Internal.EnumLabelOf() return nil end
+function Ext._Internal.BitfieldOf() return nil end
+function Ext._Internal.CustomMember() return nil end
+
+local function pointer(fields)
+  return setmetatable({}, {__pairs = function() return next, fields, nil end,
+                           __bg3lePointer = true, __bg3leIdentity = "p:1", __name = "IActionData"})
+end
+local actions = {pointer({Animation = "", Conditions = "", Type = "OpenClose"})}
+local list = setmetatable({}, {__bg3leContainer = "array", __pairs = function() return next, actions, nil end})
+local template = setmetatable({}, {__bg3leIdentity = "o:1:", __name = "CharacterTemplate",
+  __pairs = function() return next, {OnDeathActions = list, Parent = pointer({Name = "x"})}, nil end})
+
+local plain = Ext.Types.Serialize(template)
+check("a container's pointer element is a plain table", getmetatable(plain.OnDeathActions[1]), nil)
+check("... with its declared class's fields", plain.OnDeathActions[1].Type, "OpenClose")
+check("a struct's pointer member is left out", plain.Parent, nil)
+
+if fails > 0 then
+  print(fails .. " failure(s)")
+  os.exit(1)
+end
+print("serializing pointers checks out")
+"""
+
 harness = (PRELUDE + plain_value + reraise + make_array + make_map + "Ext.Json = {}\n" + encoder
-           + ARRAY_TEST + MAP_TEST + DUMP_TEST + NESTED_TEST)
+           + serialize + ARRAY_TEST + MAP_TEST + DUMP_TEST + NESTED_TEST + SERIALIZE_TEST)
 
 with tempfile.NamedTemporaryFile("w", suffix=".lua", delete=False) as f:
     f.write(harness)
