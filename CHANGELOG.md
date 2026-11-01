@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.4.2 (2026-11-01)
+
+- `Ext.Types.Serialize` writes out a pointer held in an array or map as a plain table of its declared class, as
+  upstream's does; a struct's own pointer fields are still left out. It left the object itself there, so
+  `Ext.Json.Stringify(Ext.Types.Serialize(template))` on a character template failed with "Attempted to stringify
+  unsupported type: IActionData" (its `OnDeathActions`). Configurable Movement Speed does that whenever its speed is
+  changed from MCM.
+
 ## v0.4.1 (2026-10-30)
 
 - The overlay's fonts are built for the game's language. They were built a few seconds after launch, before bg3le
