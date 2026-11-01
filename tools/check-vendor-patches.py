@@ -178,6 +178,13 @@ CHECKS = [
              and "STDString fontLanguage_;" in text("BG3Extender/Extender/Client/IMGUI/IMGUI.h")),
     ("a mod's own IMGUI font gets its language's alphabet",
      lambda: "// bg3le: a mod's own font gets its language's alphabet too" in text("BG3Extender/Extender/Client/IMGUI/IMGUI.cpp")),
+    ("IMGUI handles retained read-only states without undo reload",
+     lambda: re.search(
+         r"if \(\(state->Flags & ImGuiInputTextFlags_ReadOnly\) != 0\) \{\s*"
+         r"state->TextLen = static_cast<int>\(ImStrlen\(Text\.c_str\(\)\)\);\s*"
+         r"state->CursorClamp\(\);\s*} else \{\s*state->ReloadUserBufAndKeepSelection\(\);",
+         text("BG3Extender/Extender/Client/IMGUI/IMGUI.cpp").partition("void InputText::StyledRender(")[2]
+             .partition("STDString InputText::GetText()")[0]) is not None),
     ("GlobalSwitches has this build's SoundSetting size and tail padding",
      lambda: "uint64_t field_58_bg3le;" in text("BG3Extender/GameDefinitions/Misc.h")
              and "uint64_t field_12F0_bg3le;" in text("BG3Extender/GameDefinitions/Misc.h")),

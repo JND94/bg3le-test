@@ -431,6 +431,15 @@ Ukrainian now add Cyrillic and Turkish adds its letters to every font; a font
 without those glyphs simply has none to add. CJK is left as upstream has it:
 its ranges are tens of thousands of glyphs per size.
 
+**`Extender/Client/IMGUI/IMGUI.cpp` — external text changes do not reload
+read-only input states.** ImGui renders these from the caller's buffer and can
+retain a nonzero text length without allocating its internal editable buffer.
+Forcing a reload reconciled undo against that null buffer. `StyledRender`
+checks the retained state's `ReadOnly` flag, including inherited item flags,
+and clamps its cursor/selection to the new text length without undo reload;
+editable states still reload. `tools/test-imgui-input-reload.py` exercises the
+actual methods against headless ImGui, without the game.
+
 **`Lua/Libs/ClientUI/Builtins.inl` and `GameDefinitions/UI.h` — the Noesis
 functions go to the game's own copies.** Upstream links no Noesis library, so
 these reimplement `Reflection`, `SymbolManager`, `TypeClass`, `BaseCommand`
