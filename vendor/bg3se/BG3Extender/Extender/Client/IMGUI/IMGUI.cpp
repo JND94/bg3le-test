@@ -1530,15 +1530,12 @@ void InputText::StyledRender(DrawingContext& context)
     if (reloadText_) {
         auto id = ImGui::GetCurrentWindow()->GetID(Label.c_str());
         auto state = ImGui::GetInputTextState(id);
-        if (state != nullptr) {
-            // Read-only states use Text directly and may have no internal TextA buffer.
-            // The retained state also accounts for inherited read-only item flags.
-            if ((state->Flags & ImGuiInputTextFlags_ReadOnly) != 0) {
-                state->TextLen = static_cast<int>(ImStrlen(Text.c_str()));
-                state->CursorClamp();
-            } else {
-                state->ReloadUserBufAndKeepSelection();
-            }
+        if (state != nullptr && (state->Flags & ImGuiInputTextFlags_ReadOnly) == 0) {
+            state->ReloadUserBufAndKeepSelection();
+        } else if (state != nullptr) {
+            // bg3le: read-only states draw Text directly; clamp the selection to its new length.
+            state->TextLen = (int)ImStrlen(Text.c_str());
+            state->CursorClamp();
         }
         reloadText_ = false;
     }
