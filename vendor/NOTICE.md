@@ -431,6 +431,15 @@ Ukrainian now add Cyrillic and Turkish adds its letters to every font; a font
 without those glyphs simply has none to add. CJK is left as upstream has it:
 its ranges are tens of thousands of glyphs per size.
 
+**`Extender/Client/IMGUI/IMGUI.cpp` — replacing a read-only input's text
+clamps its selection.** Upstream `94d334898f` (after v33) stopped `SetText`
+reloading a read-only input, which crashed reconciling undo against a buffer
+ImGui never allocates for one; its condition is taken as is. bg3le also clamps
+the cursor and selection to the new length: left alone, a selection past the
+end of shorter text is drawn and copied from beyond it.
+`tools/test-imgui-input-reload.py` runs the real methods against headless
+ImGui.
+
 **`Lua/Libs/ClientUI/Builtins.inl` and `GameDefinitions/UI.h` — the Noesis
 functions go to the game's own copies.** Upstream links no Noesis library, so
 these reimplement `Reflection`, `SymbolManager`, `TypeClass`, `BaseCommand`
