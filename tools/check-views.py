@@ -73,6 +73,11 @@ serialize = slice_between(
     "-- Upstream's Serialize turns an engine object proxy into a plain Lua",
     "-- Upstream's Unserialize ignores what a property's setter refuses")
 
+# What a pointer field reads as.
+pointed_object = slice_between(
+    "-- What a pointer field reads as: the object it points at, read as an object",
+    "-- Amends a snapshot without writing to the engine.")
+
 # Stringify raises again through these; the harness's errors are positioned in
 # its own file, so they end at error(err, 0) and never reach RaiseOutside.
 reraise = slice_between(
@@ -474,8 +479,42 @@ end
 print("serializing pointers checks out")
 """
 
+STATUS_TEST = r"""
+-- ---- a status pointer reads as its concrete class ----
+--
+-- Upstream's MakePolymorphicRef gives a status its own class. bg3le read every one as esv::Status, so
+-- Group Climbing's climbing status .Item raised "Property does not exist: esv::Status::Item".
+local asked = 0
+function Ext._Internal.StatusClass(at, client)
+  asked = asked + 1
+  if at == 0x100 and not client then return "esv::StatusClimbing" end
+  if at == 0x200 and client then return "ecl::StatusClimbing" end
+  return nil
+end
+function Ext._Internal.ViewTypeName(class) return class end
+function read_object(_, class) return {Class = class} end
+
+local server = Ext._Internal.PointedObject(0x100, "esv::Status")
+check("a server status reads as its own class", server.Class, "esv::StatusClimbing")
+check("... and is named for it", getmetatable(server).__name, "esv::StatusClimbing")
+check("a client status reads as its own class", Ext._Internal.PointedObject(0x200, "ecl::Status").Class,
+      "ecl::StatusClimbing")
+check("a status of no known class stays the base", Ext._Internal.PointedObject(0x300, "esv::Status").Class,
+      "esv::Status")
+asked = 0
+Ext._Internal.PointedObject(0x100, "IActionData")
+check("another class is not looked up", asked, 0)
+
+if fails > 0 then
+  print(fails .. " failure(s)")
+  os.exit(1)
+end
+print("status pointers check out")
+"""
+
 harness = (PRELUDE + plain_value + reraise + make_array + make_map + "Ext.Json = {}\n" + encoder
-           + serialize + ARRAY_TEST + MAP_TEST + DUMP_TEST + NESTED_TEST + SERIALIZE_TEST)
+           + serialize + pointed_object + ARRAY_TEST + MAP_TEST + DUMP_TEST + NESTED_TEST + SERIALIZE_TEST
+           + STATUS_TEST)
 
 with tempfile.NamedTemporaryFile("w", suffix=".lua", delete=False) as f:
     f.write(harness)

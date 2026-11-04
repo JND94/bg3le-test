@@ -8033,6 +8033,37 @@ int l_pointee_class(lua_State* L) {
     return 1;
 }
 
+// Ext._Internal.StatusClass(address, isClient) -> the status's concrete class, as upstream's
+// MakePolymorphicRef. GetStatusId is read, not called: on this build every status class's
+// slot (esv 4, ecl 2) is `mov eax, imm32; ret`.
+int l_status_class(lua_State* L) {
+    static constexpr char const* kNames[] = {
+        nullptr, "Dying", "Heal", "KnockedDown", "TeleportFalling", "Boost", "Reaction",
+        "StoryFrozen", "Sneaking", "Unlock", "Fear", "Smelly", "Invisible", "Rotate", "Material",
+        "Climbing", "Incapacitated", "InSurface", "Polymorphed", "Effect", "Deactivated", "Downed"};
+    thread_local std::unordered_map<std::uintptr_t, std::uint32_t> known;  // by vtable
+
+    const auto at = (std::uintptr_t)luaL_checkinteger(L, 1);
+    const bool client = lua_toboolean(L, 2);
+    std::uintptr_t vmt = 0;
+    if (!safe_read((void const*)at, &vmt, sizeof(vmt))) return 0;
+
+    auto cached = known.find(vmt);
+    if (cached == known.end()) {
+        std::uintptr_t fn = 0;
+        unsigned char code[6] = {};
+        std::uint32_t id = 0;
+        if (safe_read((void const*)(vmt + (client ? 2 : 4) * 8), &fn, sizeof(fn))
+            && safe_read((void const*)fn, code, sizeof(code)) && code[0] == 0xb8 && code[5] == 0xc3) {
+            std::memcpy(&id, code + 1, sizeof(id));
+        }
+        cached = known.emplace(vmt, id < std::size(kNames) ? id : 0).first;
+    }
+    if (cached->second == 0) return 0;
+    lua_pushfstring(L, "%s::Status%s", client ? "ecl" : "esv", kNames[cached->second]);
+    return 1;
+}
+
 // Ext._Internal.TakeComponentEvents()
 //   -> { { handle, component short name, "create" | "destroy" }, ... }
 int l_take_component_events(lua_State* L) {
@@ -8523,6 +8554,8 @@ void build_state(bool client) {
     lua_setfield(g_lua, -2, "WatchComponentEvents");
     lua_pushcfunction(g_lua, l_pointee_class);
     lua_setfield(g_lua, -2, "PointeeClass");
+    lua_pushcfunction(g_lua, l_status_class);
+    lua_setfield(g_lua, -2, "StatusClass");
     lua_pushcfunction(g_lua, l_resource_sources);
     lua_setfield(g_lua, -2, "ResourceSources");
     lua_pushcfunction(g_lua, l_texture_atlas_map);
@@ -16130,6 +16163,10 @@ Ext.System = setmetatable({}, {
 -- Its identity is its address, which is what AvoidRecursion keys on.
 function Ext._Internal.PointedObject(target, class)
   if class == nil then return "<unsupported>" end
+  -- A status reads as its concrete class (esv::StatusClimbing has Item), as upstream's MakePolymorphicRef.
+  if class == "esv::Status" or class == "ecl::Status" then
+    class = Ext._Internal.StatusClass(target, class == "ecl::Status") or class
+  end
   local loaded
   -- A functor set changes under AddNew and Remove, so it is read afresh.
   local live = class == "stats::Functors"
