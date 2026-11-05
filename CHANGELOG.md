@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.3 (2026-11-05)
+
+- A status reads as its own class, as upstream's does: a climbing status is an `esv::StatusClimbing`, with the ladder
+  in `Item`. Every status read as the base `esv::Status`, so Group Climbing failed on every climb with "Property does
+  not exist: esv::Status::Item" (reported on Nexus). Client statuses get their classes the same way.
+- Replacing a read-only IMGUI input's text no longer crashes the next frame once the field has been focused. Upstream
+  fixed the crash after v33 and its fix is taken as is; bg3le also clamps the cursor and selection to the new text, so
+  a selection past the end of shorter text isn't drawn or copied from beyond it (#8, thanks to breitzer).
+
 ## v0.4.2 (2026-11-01)
 
 - `Ext.Types.Serialize` writes out a pointer held in an array or map as a plain table of its declared class, as
