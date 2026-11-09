@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.4.4 (2026-11-09)
+
+- `Ext.System.ServerTurnOrder` is mapped, so Party Tactics AI can end a companion's turn by adding it to `EndTurn`.
+  It warned "Trying to access system that is not mapped" every few seconds and the player had to click End Turn (#9,
+  thanks to Algo1493). bg3le looked a system's fields up by the engine's class name, but bg3se declares 25 systems
+  under a different one, so `ServerBoost`, `ServerSpell`, `ServerRoll`, `ServerPassive`, `ServerHotbar`, `Visual` and
+  the others were unreachable the same way.
+
 ## v0.4.3 (2026-11-05)
 
 - A status reads as its own class, as upstream's does: a climbing status is an `esv::StatusClimbing`, with the ladder
