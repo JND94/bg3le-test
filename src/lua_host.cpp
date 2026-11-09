@@ -7784,19 +7784,24 @@ extern "C" bool bg3le_system_probe(void* container, std::int32_t index, void** s
                                    std::int32_t* ownIndex, void** update,
                                    std::uint32_t* count);
 
-// bg3se's ExtSystemType labels and the engine class each names.
+// bg3se's ExtSystemType labels, the engine class each names, and the C++
+// class its field table is under (esv::combat::TurnOrderSystem for the
+// engine's esv::TurnOrderSystem).
 struct SystemName {
     char const* Label;
     char const* Engine;
+    char const* Class;
 };
 constexpr SystemName kSystemNames[] = {
 #include "vendor/system_names.inc"
 };
 
-// The engine class a bg3se system label names, or the name itself.
+// The field-table class of a bg3se system label or engine name, or the name itself.
 char const* system_class(char const* name) {
     for (auto const& known : kSystemNames) {
-        if (std::strcmp(known.Label, name) == 0) return known.Engine;
+        if (std::strcmp(known.Label, name) == 0 || std::strcmp(known.Engine, name) == 0) {
+            return known.Class;
+        }
     }
     return name;
 }
