@@ -16,7 +16,8 @@ set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # The Steam install is the native build now, so the game and its Data live in
 # one place and the separate tree with a Data symlink is gone.
-GAME="$HOME/.local/share/Steam/steamapps/common/Baldurs Gate 3"
+# BG3_DIR names it when it is in another Steam library.
+GAME="${BG3_DIR:-$HOME/.local/share/Steam/steamapps/common/Baldurs Gate 3}"
 SNIPER_DIR="$HOME/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper"
 
 export MANGOHUD="${MANGOHUD:-1}"
