@@ -4,8 +4,10 @@
 // its own entry points through its GOT, which Ubuntu's -Bsymbolic-functions
 // build does not. Connor Murphy found the lookup (#10); thank you.
 //
-// Exported as dlsym for every caller. Anything we don't answer tail-jumps to
-// libc's, so glibc still sees the original caller and RTLD_NEXT is unchanged.
+// Exported as dlsym@@GLIBC_2.2.5 (src/vulkan_dlsym.map), so Steam's overlay,
+// preloaded first, finds ours as its next. Anything we don't answer
+// tail-jumps to libc's, so glibc still sees the original caller and
+// RTLD_NEXT is unchanged.
 
 #include <dlfcn.h>
 #include <vulkan/vulkan.h>

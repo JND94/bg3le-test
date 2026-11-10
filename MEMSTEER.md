@@ -67,7 +67,9 @@ our pointers, and everything else follows from that.
 Most games don't link the loader: they `dlopen` it and `dlsym` that handle for
 `vkGetInstanceProcAddr`, and that lookup never sees a preload. So `memsteer.so`
 also exports `dlsym` and answers that one lookup with its own
-(`src/vulkan_dlsym.cpp`); every other call goes straight on to libc's. Without
+(`src/vulkan_dlsym.cpp`); every other call goes straight on to libc's. It
+carries libc's `GLIBC_2.2.5` version, because Steam's overlay, preloaded
+first, looks its next `dlsym` up by that version. Without
 it the hook was only reached when the loader resolved its own entry points
 through its GOT, which Ubuntu's build does not.
 

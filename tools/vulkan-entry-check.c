@@ -23,6 +23,39 @@ Fn vkGetInstanceProcAddr(void* inst, char const* name) {
     return NULL;
 }
 
+#elif defined(STANDIN_OVERLAY)
+
+// Steam's gameoverlayrenderer.so, preloaded ahead of bg3le. Its dlsym finds
+// the next one with dlvsym(RTLD_NEXT, "dlsym", "GLIBC_2.2.5"), tail-jumps
+// there for RTLD_NEXT and calls it for anything else.
+typedef void* (*Dlsym)(void*, char const*);
+
+__attribute__((visibility("hidden"))) Dlsym standin_next_dlsym(void) {
+    static Dlsym next;
+    if (next == NULL) next = (Dlsym)dlvsym(RTLD_NEXT, "dlsym", "GLIBC_2.2.5");
+    return next;
+}
+
+__attribute__((visibility("hidden"))) void* standin_lookup(void* handle, char const* name) {
+    return standin_next_dlsym()(handle, name);
+}
+
+__asm__(
+    "    .globl dlsym\n"
+    "    .type dlsym, @function\n"
+    "dlsym:\n"
+    "    cmp $-1, %rdi\n"
+    "    jne standin_lookup\n"
+    "    push %rdi\n"
+    "    push %rsi\n"
+    "    sub $8, %rsp\n"
+    "    call standin_next_dlsym\n"
+    "    add $8, %rsp\n"
+    "    pop %rsi\n"
+    "    pop %rdi\n"
+    "    jmp *%rax\n"
+    "    .size dlsym, . - dlsym\n");
+
 #elif defined(STANDIN_LAYER)
 
 // A layer's or driver's own vkGetInstanceProcAddr, which must stay its own.
@@ -34,6 +67,9 @@ Fn vkGetInstanceProcAddr(void* inst, char const* name) {
 #else
 
 typedef Fn (*Gipa)(void*, char const*);
+
+// bg3 is built against an older glibc and asks for this version.
+__asm__(".symver dlsym, dlsym@GLIBC_2.2.5");
 
 static int failures;
 

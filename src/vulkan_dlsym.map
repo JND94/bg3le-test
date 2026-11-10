@@ -1,0 +1,6 @@
+/* src/vulkan_dlsym.cpp's dlsym carries libc's version: Steam's overlay finds
+   the next dlsym with dlvsym(RTLD_NEXT, "dlsym", "GLIBC_2.2.5"), which skips
+   an unversioned one. Every other symbol stays as it was. */
+GLIBC_2.2.5 {
+    global: dlsym;
+};

@@ -21,6 +21,7 @@ loader=(-shared -fPIC -O0 -fsemantic-interposition -DSTANDIN_LOADER -Wl,-soname,
 # How Ubuntu links the real one: its own entry points are bound at link time.
 "$CC" "${loader[@]}" -Wl,-Bsymbolic-functions "$SRC" -o "$WORK/symbolic/libvulkan.so.1"
 "$CC" -shared -fPIC -DSTANDIN_LAYER "$SRC" -o "$WORK/standin-layer.so"
+"$CC" -shared -fPIC -DSTANDIN_OVERLAY "$SRC" -o "$WORK/standin-overlay.so" -ldl
 "$CC" -O1 -rdynamic "$SRC" -o "$WORK/probe" -ldl
 
 # The stand-ins must differ as the real loaders do, or this proves nothing.
@@ -34,9 +35,13 @@ fi
 status=0
 for kind in plain symbolic; do
     ln -s libvulkan.so.1 "$WORK/$kind/libvulkan.so"
-    echo "== $kind loader"
-    env LD_LIBRARY_PATH="$WORK/$kind" LD_PRELOAD="$LIB" BG3LE_LOG="$WORK/bg3le.log" \
-        "$WORK/probe" "$WORK/standin-layer.so" || status=1
+    # Launched from Steam, its overlay's dlsym comes first.
+    for preload in "$LIB" "$WORK/standin-overlay.so:$LIB"; do
+        case "$preload" in *standin-overlay*) first=", Steam's overlay first" ;; *) first="" ;; esac
+        echo "== $kind loader$first"
+        env LD_LIBRARY_PATH="$WORK/$kind" LD_PRELOAD="$preload" BG3LE_LOG="$WORK/bg3le.log" \
+            "$WORK/probe" "$WORK/standin-layer.so" || status=1
+    done
 done
 [ "$status" = 0 ] && echo "check-vulkan-entry: ok"
 exit "$status"

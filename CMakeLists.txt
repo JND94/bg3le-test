@@ -408,6 +408,10 @@ target_link_libraries(bg3le PRIVATE dl lua_static bg3se_vendor vulkan SDL2)
 # unresolved and weak. See src/vendor/noesis_rtti_linux.cpp for why nothing on
 # Linux can satisfy them, and why it is safe while Ext.ClientUI is off.
 target_link_options(bg3le PRIVATE -Wl,--warn-unresolved-symbols)
+# dlsym's version; see src/vulkan_dlsym.map.
+set(DLSYM_MAP ${CMAKE_CURRENT_SOURCE_DIR}/src/vulkan_dlsym.map)
+target_link_options(bg3le PRIVATE -Wl,--version-script=${DLSYM_MAP})
+set_property(TARGET bg3le APPEND PROPERTY LINK_DEPENDS ${DLSYM_MAP})
 target_compile_options(bg3le PRIVATE -Wall -Wextra -fvisibility=default)
 
 add_executable(symdump tools/symdump.cpp src/elf_symbols.cpp src/log.cpp)
@@ -435,6 +439,8 @@ target_include_directories(memsteer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 # RTLD_NEXT misses, and every pointer handed back is null. The game then
 # crashes in its own code with nothing of ours on the stack.
 target_link_libraries(memsteer PRIVATE dl vulkan)
+target_link_options(memsteer PRIVATE -Wl,--version-script=${DLSYM_MAP})
+set_property(TARGET memsteer APPEND PROPERTY LINK_DEPENDS ${DLSYM_MAP})
 
 add_executable(memgrep tools/memgrep.c)
 # A C program, so the global -stdlib=libc++ has nothing to act on and clang
