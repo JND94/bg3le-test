@@ -59,6 +59,15 @@ clone() {  # clone <dir> <url> [branch]
     else git clone --depth 1 "$2" "$1"; fi
 }
 
+clone_at() {  # clone_at <dir> <url> <commit>; also moves an existing clone to <commit>
+    if [ -d "$1" ] && [ ! -d "$1/.git" ]; then echo "  $1: present, not a git clone"; return; fi
+    [ -d "$1" ] || git init -q "$1"
+    if [ "$(git -C "$1" rev-parse -q --verify HEAD)" = "$3" ]; then echo "  $1: present"; return; fi
+    echo "  $1: checking out $3"
+    git -C "$1" fetch --depth 1 "$2" "$3"
+    git -C "$1" checkout -q --detach FETCH_HEAD
+}
+
 echo "== Noesis (the Windows SDK ships portable C++ headers) =="
 if [ -d Noesis ]; then
     echo "  Noesis: present"
@@ -77,7 +86,8 @@ fi
 
 echo "== header-only / portable sources =="
 clone glm       https://github.com/g-truc/glm 1.0.3
-clone imgui     https://github.com/Norbyte/imgui
+# The fork's 2026-11-07 merge of upstream 1.93 drops APIs the vendored IMGUI code uses.
+clone_at imgui  https://github.com/Norbyte/imgui f0e177b80ed7525cf60fdbd552cebb7c58f8320f
 clone lua       https://github.com/Norbyte/lua-dos
 clone rapidjson https://github.com/tencent/rapidjson
 clone tinycrypt https://github.com/intel/tinycrypt
