@@ -357,12 +357,29 @@ PFN_vkVoidFunction diverted(const char* name) {
     return nullptr;
 }
 
+// Ours whenever either feature is on: the device-level lookup is how both
+// the steering and the overlay's forwarders are reached.
+bool wanted() {
+    return mode() != Mode::Off
+        || (bg3le_vulkan_forwarder != nullptr
+            && bg3le_vulkan_forwarder("vkQueuePresentKHR") != nullptr);
+}
+
+bool named(const char* name, const char* what) {
+    return name != nullptr && std::strcmp(name, what) == 0;
+}
+
 }  // namespace
 
+// Each also answers for itself: a loader that binds its own symbols
+// (src/vulkan_dlsym.cpp) would otherwise hand back its own and step past us.
 extern "C" PFN_vkVoidFunction vkGetDeviceProcAddr(VkDevice dev,
                                                   const char* name) {
     static const auto next =
         real<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
+    if (named(name, "vkGetDeviceProcAddr") && wanted()) {
+        return (PFN_vkVoidFunction)vkGetDeviceProcAddr;
+    }
     if (auto ours = diverted(name)) return ours;
     return next != nullptr ? next(dev, name) : nullptr;
 }
@@ -371,15 +388,11 @@ extern "C" PFN_vkVoidFunction vkGetInstanceProcAddr(VkInstance inst,
                                                     const char* name) {
     static const auto next =
         real<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-    // Ours whenever either feature is on: the device-level lookup is how both
-    // the steering and the overlay's forwarders are reached.
-    const bool wanted =
-        mode() != Mode::Off
-        || (bg3le_vulkan_forwarder != nullptr
-            && bg3le_vulkan_forwarder("vkQueuePresentKHR") != nullptr);
-    if (name != nullptr && wanted
-        && std::strcmp(name, "vkGetDeviceProcAddr") == 0) {
+    if (named(name, "vkGetDeviceProcAddr") && wanted()) {
         return (PFN_vkVoidFunction)vkGetDeviceProcAddr;
+    }
+    if (named(name, "vkGetInstanceProcAddr") && wanted()) {
+        return (PFN_vkVoidFunction)vkGetInstanceProcAddr;
     }
     if (auto ours = diverted(name)) return ours;
     return next != nullptr ? next(inst, name) : nullptr;

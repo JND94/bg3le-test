@@ -343,6 +343,7 @@ add_library(bg3le SHARED
     src/win_compat.cpp
     src/affinity.cpp
     src/vulkan_memory.cpp
+    src/vulkan_dlsym.cpp
     src/vulkan_forward.cpp
     src/detour_interpose.cpp
     src/inflate.cpp
@@ -426,7 +427,7 @@ add_executable(symdump tools/symdump.cpp src/elf_symbols.cpp src/log.cpp)
 #
 # See MEMSTEER.md.
 # ---------------------------------------------------------------------------
-add_library(memsteer SHARED src/vulkan_memory.cpp src/memsteer_log.cpp)
+add_library(memsteer SHARED src/vulkan_memory.cpp src/vulkan_dlsym.cpp src/memsteer_log.cpp)
 set_target_properties(memsteer PROPERTIES PREFIX "" POSITION_INDEPENDENT_CODE ON)
 target_include_directories(memsteer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 # The loader is linked, not only dlopen'd: without it nothing has pulled

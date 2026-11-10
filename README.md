@@ -344,7 +344,7 @@ a fork of Biiinks78's camera mod, is one, with its settings in MCM.
 
 ## Contributing
 
-Patches welcome. Six checks want running before a pull request, all of which
+Patches welcome. Seven checks want running before a pull request, all of which
 work without the game:
 
     ./tools/check-symbols.sh        # nothing references an undefined bg3le symbol
@@ -353,6 +353,7 @@ work without the game:
     python3 client/tools/check-output.py   # the console's terminal handling
     python3 client/tools/check-prompt.py   # prompt width against readline's idea of it
     python3 tools/check-installer.py       # launch-option edits and the wrapper
+    ./tools/check-vulkan-entry.sh   # the game's Vulkan lookup reaches bg3le, however the loader was linked
 
 `check-symbols.sh` is the one that matters most: the library links with
 undefined symbols allowed, because it has to interpose the engine's own, so a
@@ -409,8 +410,10 @@ function. Four primitives, in `src/hook.cpp`, `src/preload.cpp` and
 4. `DetourAttachEx`, for the vendored code that expects Microsoft Detours. It
    records the target and the replacement rather than patching either, and
    one exported forwarder per hooked function lets the dynamic linker do what
-   Detours would have done. That is what brings up bg3se's seven Vulkan hooks
-   for the ImGui overlay; the two mistakes it took to get right are in
+   Detours would have done. The game finds them through bg3le's
+   `vkGetInstanceProcAddr`, which bg3le's `dlsym` hands it in place of the
+   loader's (`src/vulkan_dlsym.cpp`). That is what brings up bg3se's seven
+   Vulkan hooks for the ImGui overlay; the two mistakes it took to get right are in
    [reference/IMGUI-ASSESSMENT.md](reference/IMGUI-ASSESSMENT.md)
 
 Symbols come from the native binary's own `.symtab` (102,920 of them) plus
