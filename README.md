@@ -119,11 +119,12 @@ structure was found, and what was measured, is in
 
 ## Building
 
-Needs clang, libc++ (including the static archives), CMake, SDL2 and the
-Vulkan loader. protobuf and abseil are built from source by
-`tools/fetch-externals.sh` rather than taken from the distribution, because the
-packaged builds are compiled against libstdc++ and export `std::__cxx11`
-symbols that cannot link into a libc++ library.
+Needs clang, libc++ (including the static archives), CMake, SDL2, the
+Vulkan loader, and bsdtar or unzip to unpack the Noesis SDK. protobuf and
+abseil are built from source by `tools/fetch-externals.sh` rather than taken
+from the distribution, because the packaged builds are compiled against
+libstdc++ and export `std::__cxx11` symbols that cannot link into a libc++
+library.
 
 They are also built with one libc++ ABI flag the whole library shares. The
 game is built against libc++ ABI version 2 and bg3le against ABI 1, and the

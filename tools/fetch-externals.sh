@@ -63,11 +63,15 @@ echo "== Noesis (the Windows SDK ships portable C++ headers) =="
 if [ -d Noesis ]; then
     echo "  Noesis: present"
 else
+    # GNU tar cannot read zip archives; bsdtar and unzip both can.
+    if ! command -v bsdtar >/dev/null && ! command -v unzip >/dev/null; then
+        echo "Needs bsdtar or unzip to unpack the Noesis SDK" >&2; exit 1
+    fi
     curl -fL http://bg3se-updates.norbyte.dev/Stuff/NoesisGUI-NativeSDK-win-3.1.7-Indie.zip \
          -o noesis.zip
     mkdir -p Noesis
-    # GNU tar cannot read zip archives; on Windows tar is bsdtar, which can.
-    bsdtar -xf noesis.zip -C Noesis
+    if command -v bsdtar >/dev/null; then bsdtar -xf noesis.zip -C Noesis
+    else unzip -q noesis.zip -d Noesis; fi
     rm noesis.zip
 fi
 
