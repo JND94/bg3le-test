@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.4.5 (2026-11-10)
+
+- The IMGUI overlay, and so MCM, works on Ubuntu 26.04 and wherever else the Vulkan loader binds its own functions.
+  MCM's button and Insert did nothing there and `Ext.IMGUI.NewWindow` could not create a window, and memory steering
+  on an external GPU was silently off for the same reason (#10, thanks to Connor Murphy, who traced it to the game's
+  `dlsym`). The game asks the loader for `vkGetInstanceProcAddr` directly, and bg3le was reached only because the
+  loader handed out its own entry points through bg3le's exports. Ubuntu links the loader so that it doesn't, and
+  Steam's runtime uses the host's loader when it is newer than its own. bg3le now answers that one lookup itself,
+  through Steam's overlay as well, and leaves every other `dlsym` as it was. `memsteer.so` gets the same fix.
+- A fresh checkout builds again. `tools/fetch-externals.sh` fetches imgui at the commit the vendored overlay builds
+  against, since the fork's 2026-11-07 merge from upstream removed functions it uses, and unpacks the Noesis SDK with
+  `unzip` when `bsdtar` is missing, as it is by default on Debian and Ubuntu.
+
 ## v0.4.4 (2026-11-09)
 
 - `Ext.System.ServerTurnOrder` is mapped, so Party Tactics AI can end a companion's turn by adding it to `EndTurn`.
