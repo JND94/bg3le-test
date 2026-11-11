@@ -1,0 +1,68 @@
+
+name: Build Sniper
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Free disk space
+        uses: endersonmenezes/free-disk-space@v3
+        with:
+          remove_android: true
+          remove_dotnet: true
+          remove_haskell: true
+          remove_tool_cache: true
+          remove_swap: true
+          remove_packages: >-
+            azure-cli
+            google-cloud-cli
+            microsoft-edge-stable
+            google-chrome-stable
+            firefox
+            postgresql*
+            temurin-*
+            *llvm*
+            mysql*
+            dotnet-sdk-*
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            git
+
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Verify Docker
+        run: |
+          docker --version
+          docker info
+
+      - name: Verify build tools
+        run: |
+          clang --version
+          cmake --version
+          ninja --version
+          git --version
+
+      - name: Build Sniper
+        run: bash tools/build-sniper.sh
+
+      - name: Upload Sniper library
+        uses: actions/upload-artifact@v4
+        with:
+          name: libbg3le-sniper
+          path: build-sniper/bg3le/libbg3le.so

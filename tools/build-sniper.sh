@@ -24,6 +24,7 @@ IMAGE="${BG3LE_SNIPER_IMAGE:-registry.gitlab.steamos.cloud/steamrt/sniper/sdk:la
 EXT="$ROOT/external/third_party"
 TOOLCHAIN="$ROOT/cmake/sniper-toolchain.cmake"
 GLIBC_MAX="2.31"
+RELEASE_FLAGS="-O2 -DNDEBUG"
 # The same std::variant layout as every other piece of C++ in the library; see tools/fetch-externals.sh.
 LIBCXX_ABI_FLAGS="-D_LIBCPP_ABI_VARIANT_INDEX_TYPE_OPTIMIZATION"
 
@@ -78,6 +79,9 @@ else
     env -u BG3LE_SNIPER_LIBCXX cmake -S "$LLVM/runtimes" -B "$OUT/libcxx-build" -G Ninja \
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS_RELEASE="$RELEASE_FLAGS" \
+        -DCMAKE_CXX_FLAGS_RELEASE="$RELEASE_FLAGS" \
+        -DCMAKE_ASM_FLAGS_RELEASE="$RELEASE_FLAGS" \
         -DCMAKE_INSTALL_PREFIX="$LIBCXX" \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
@@ -107,6 +111,9 @@ else
     cmake -S "$EXT/abseil" -B "$OUT/abseil-build" -G Ninja \
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS_RELEASE="$RELEASE_FLAGS" \
+        -DCMAKE_CXX_FLAGS_RELEASE="$RELEASE_FLAGS" \
+        -DCMAKE_ASM_FLAGS_RELEASE="$RELEASE_FLAGS" \
         -DCMAKE_CXX_FLAGS="$EXT_CXX_FLAGS" \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -DCMAKE_CXX_STANDARD=17 \
@@ -128,6 +135,9 @@ else
     cmake -S "$EXT/protobuf" -B "$PROTOBUF" -G Ninja \
         -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS_RELEASE="$RELEASE_FLAGS" \
+        -DCMAKE_CXX_FLAGS_RELEASE="$RELEASE_FLAGS" \
+        -DCMAKE_ASM_FLAGS_RELEASE="$RELEASE_FLAGS" \
         -DCMAKE_CXX_FLAGS="$EXT_CXX_FLAGS" \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -DCMAKE_CXX_STANDARD=17 \
@@ -147,6 +157,9 @@ echo "== bg3le =="
 cmake -S "$ROOT" -B "$OUT/bg3le" -G Ninja \
     -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \
     -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_FLAGS_RELEASE="$RELEASE_FLAGS" \
+    -DCMAKE_CXX_FLAGS_RELEASE="$RELEASE_FLAGS" \
+    -DCMAKE_ASM_FLAGS_RELEASE="$RELEASE_FLAGS" \
     -DLIBCXX_STATIC="$LIBCXX/lib/libc++.a" \
     -DLIBCXXABI_STATIC="$LIBCXX/lib/libc++abi.a" \
     -DBG3LE_PROTOBUF_BUILD="$PROTOBUF" \
